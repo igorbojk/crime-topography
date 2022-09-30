@@ -42,6 +42,7 @@ body {
         bottom: 0;
         width: 40px;
         height: 40px;
+        cursor: pointer;
     }
 }
 
@@ -85,11 +86,12 @@ body {
     height: 60px;
     position: relative;
     display: flex;
+    align-items: flex-end;
     input {
         position: absolute;
         left: 0;
         right: 0;
-        bottom: 0
+        bottom: -26px;
     }
     &__elem {
         width: 1%;
@@ -99,6 +101,12 @@ body {
         &:hover {
             cursor: pointer;
             background: #acaaaa;
+        }
+        &:first-child {
+            margin-left: 0;
+        }
+        &:last-child {
+            margin-right: 0;
         }
     }
 }
