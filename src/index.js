@@ -12,30 +12,20 @@ const timelineNode = document.getElementById('timeline');
 const timelineRange = document.getElementById('timeline-range');
 const statsNode = document.getElementById('stats');
 const playBtn = document.getElementById('play-btn');
+const playImg = document.getElementById('play');
+const pauseImg = document.getElementById('pause');
 const canvas = document.querySelector('#canvas');
 const context = canvas.getContext('2d');
 
 let crimeDates;
 let lastCrimeDates;
 let translates;
+let animationTimeout;
+let isAnimationStarted = false;
+let stats = [];
 
 function proceedEvents(payload) {
     const arr = [];
-    /**
-     {
-       events: ['5'],
-       from: '2022-03-05',
-       lat: 50.0254,
-       lon: 36.12,
-       object_statis: ['5'],
-       qualification: ['1'],
-       till: '2022-03-05',
-      "affected_number": [
-        "15"
-      ],
-     }
-     */
-    //TODO change to reduce
     payload.forEach(el => {
         const target = arr.find(crime => crime.date === el.from);
         if (target) {
@@ -55,21 +45,23 @@ function proceedEvents(payload) {
 
 function accumulateAffectedNumber(arr) {
     return arr.reduce((acc, el) => {
-        return acc + el.affected_number ? summNumberArray(el.affected_number) : 0;
+        return acc = acc + (el.affected_number ? summNumberArray(el.affected_number) : 0);
     }, 0);
 };
 
 function summNumberArray(arr) {
     return arr.reduce((acc, el) => {
-        return acc + +el;
+        return acc = acc + (typeof el === 'string' ? Number(el) : el);
     }, 0)
 };
 
 function createTimeline(arr) {
+    const sortedArr = arr.map(el => el.affectedNumber).sort((a, b) => a - b);
+    const max = sortedArr[sortedArr.length - 1];
     arr.forEach(el => {
         const timelineElem = document.createElement('div');
         timelineElem.className = 'timeline__elem';
-        timelineElem.style = `height: ${el.affectedNumber + 10}px`
+        timelineElem.style = `height: ${(100 * el.affectedNumber) / max}%`
         timelineNode.appendChild(timelineElem);
     })
 };
@@ -78,41 +70,47 @@ function generateTranslatesObj() {
     translates = names[DEFAULT_LANG];
 }
 
-function generateStats() {
-    let arr = [];
-    crimeDates.forEach(date => {
-        date.crimes.forEach(crime => {
-            if (crime.affected_type) {
-                const target = arr.find(el => el.type === crime.affected_type[0]);
-                if (target) {
-                    target.count += summNumberArray(crime.affected_number);
-                } else {
-                    arr.push({
-                        type: crime.affected_type[0],
-                        count: summNumberArray(crime.affected_number)
-                    });
-                }
-            }
-        })
+function generateStats(dates) {
+    dates.forEach(date => {
+        addStat(date);
     });
-    return arr;
 };
 
-function createStats() {
-    const stats = generateStats();
+function addStat(date) {
+    date.crimes.forEach(crime => {
+        if (crime.affected_type) {
+            const target = stats.find(el => el.type === crime.affected_type[0]);
+            if (target) {
+                target.count += summNumberArray(crime.affected_number);
+            } else {
+                stats.push({
+                    type: crime.affected_type[0],
+                    count: summNumberArray(crime.affected_number)
+                });
+            }
+        }
+    })
+}
+
+function renderStats() {
     stats.forEach(stat => {
-        const statsItem = document.createElement('div');
-        statsItem.className = 'stats__item';
-        const statCount = document.createElement('div');
-        statCount.className = 'stats__item__count';
-        statCount.innerText = stat.count;
-        statsItem.appendChild(statCount);
-        const statTitle = document.createElement('div');
-        statTitle.className = 'stats__item__title';
-        statTitle.innerText = decodeURI(translates.affected_type[stat.type]);
-        statsItem.appendChild(statTitle);
-        // separate to thousands
-        statsNode.appendChild(statsItem);
+        const target = document.querySelector(`[affected-type="${stat.type}"`);
+        if (target) {
+            target.innerText = stat.count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+        } else {
+            const statsItem = document.createElement('div');
+            statsItem.className = 'stats__item';
+            const statCount = document.createElement('div');
+            statCount.className = 'stats__item__count';
+            statCount.innerText = stat.count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+            statCount.setAttribute('affected-type', stat.type);
+            statsItem.appendChild(statCount);
+            const statTitle = document.createElement('div');
+            statTitle.className = 'stats__item__title';
+            statTitle.innerText = decodeURI(translates.affected_type[stat.type]);
+            statsItem.appendChild(statTitle);
+            statsNode.appendChild(statsItem);
+        }
     });
 };
 
@@ -139,31 +137,60 @@ function resetCrimesToDate() {
     const lastDayIndex = crimeDates.findIndex(el => el.date === lastCrimeDates[0].date);
     context.clearRect(0, 0, canvas.width, canvas.height);
     drawCrimes(crimeDates.slice(0, lastDayIndex));
+    stats = [];
+    generateStats(crimeDates.slice(0, lastDayIndex));
+    statsNode.innerHTML = '';
+    renderStats();
+    timelineRange.value = 0;
 };
 
-function startAnimation(selectedDate = lastCrimeDates[0].date) {
-    resetCrimesToDate();
-    const index = lastCrimeDates.findIndex(el => el.date === selectedDate);
-    lastCrimeDates.slice(index, lastCrimeDates.length).forEach((date, index) => {
-        setTimeout(() => {
-            timelineRange.value = index + 1;
-            console.log(timelineRange.value)
-            createDots(date);
-        }, 500 * index);
-    });
+function playAnimation(arr, index, lastIndex) {
+    clearTimeout(animationTimeout);
+    if (index === lastIndex) {
+        return;
+    }
+    animationTimeout = setTimeout(() => {
+        timelineRange.value = index + 1;
+        createDots(arr[index]);
+        addStat(arr[index]);
+        renderStats();
+        playAnimation(arr, index + 1, lastIndex);
+    }, 1000);
 }
 
-crimeDates = proceedEvents(events);
+function pauseAnimation() {
+    clearTimeout(animationTimeout);
+    isAnimationStarted = false;
+}
+
+function startAnimation(selectedDate = lastCrimeDates[0].date) {
+    isAnimationStarted = true;
+    resetCrimesToDate();
+    const index = lastCrimeDates.findIndex(el => el.date === selectedDate);
+    const arr = lastCrimeDates.slice(index, lastCrimeDates.length);
+    playAnimation(arr, 0, arr.length - 1)
+}
+
+crimeDates = proceedEvents(events).sort((a, b) => (new Date(a.date) - new Date(b.date)));
 lastCrimeDates = crimeDates.length > 100 ? crimeDates.slice(-100) : [...crimeDates];
 
 generateTranslatesObj();
 createTimeline(lastCrimeDates);
-createStats();
+generateStats(crimeDates);
+renderStats();
 drawCrimes(crimeDates);
 
 
 playBtn.addEventListener('click', function(evt) {
     evt.stopImmediatePropagation();
     evt.preventDefault();
-    startAnimation();
+    if (isAnimationStarted) {
+        playImg.className = '';
+        pauseImg.className = 'hide';
+        pauseAnimation();
+    } else {
+        pauseImg.className = '';
+        playImg.className = 'hide';
+        startAnimation();
+    }
 }, true);
