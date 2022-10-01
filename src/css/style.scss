@@ -6,6 +6,7 @@
 
 body {
     background: black;
+    font-family: 'Montserrat';
 }
 
 .section {
@@ -101,9 +102,9 @@ body {
     align-items: flex-end;
     input {
         position: absolute;
-        left: 0;
-        right: 0;
-        bottom: -26px;
+        left: -3px;
+        right: -3px;
+        bottom: -3px;
     }
     &__elem {
         width: 1%;
@@ -121,4 +122,51 @@ body {
             margin-right: 0;
         }
     }
+}
+
+input[type=range] {
+    -webkit-appearance: none;
+    &::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 1px;
+        cursor: pointer;
+        background: #292929;
+    }
+    &::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 1px;
+        cursor: pointer;
+        background: #292929;
+    }
+    &::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        border: none;
+        height: 16px;
+        width: 16px;
+        background: url('../assets/images/thumb.png');
+        margin-top: -10px;
+        border-radius: 0 !important;
+    }
+}
+
+.bubble {
+    background: #222222;
+    color: white;
+    position: absolute;
+    padding: 4px 8px;
+    bottom: -40px;
+    width: 112px;
+    left: 6px;
+    transform: translateX(-50%);
+    text-align: center;
+}
+
+.bubble::after {
+    content: "";
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: #222222;
+    top: -1px;
+    left: 50%;
 }

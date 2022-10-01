@@ -14,6 +14,7 @@ const statsNode = document.getElementById('stats');
 const playBtn = document.getElementById('play-btn');
 const playImg = document.getElementById('play');
 const pauseImg = document.getElementById('pause');
+const bubbleNode = document.querySelector('.bubble');
 const canvas = document.querySelector('#canvas');
 const context = canvas.getContext('2d');
 
@@ -21,8 +22,12 @@ let crimeDates;
 let lastCrimeDates;
 let translates;
 let animationTimeout;
+let renderTimeout;
 let isAnimationStarted = false;
+let isAnimationPaused = false;
 let stats = [];
+let lastAnimationIndex = 0;
+let selectedDate;
 
 function proceedEvents(payload) {
     const arr = [];
@@ -62,6 +67,7 @@ function createTimeline(arr) {
         const timelineElem = document.createElement('div');
         timelineElem.className = 'timeline__elem';
         timelineElem.style = `height: ${(100 * el.affectedNumber) / max}%`
+        timelineElem.setAttribute('date', el.date)
         timelineNode.appendChild(timelineElem);
     })
 };
@@ -96,14 +102,15 @@ function renderStats() {
     stats.forEach(stat => {
         const target = document.querySelector(`[affected-type="${stat.type}"`);
         if (target) {
-            target.innerText = stat.count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+            let counter = target.querySelector('.stats__item__count')
+            counter.innerText = stat.count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
         } else {
             const statsItem = document.createElement('div');
             statsItem.className = 'stats__item';
+            statsItem.setAttribute('affected-type', stat.type);
             const statCount = document.createElement('div');
             statCount.className = 'stats__item__count';
             statCount.innerText = stat.count.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-            statCount.setAttribute('affected-type', stat.type);
             statsItem.appendChild(statCount);
             const statTitle = document.createElement('div');
             statTitle.className = 'stats__item__title';
@@ -133,54 +140,67 @@ function drawCrimes(dates) {
     });
 }
 
-function resetCrimesToDate() {
-    const lastDayIndex = crimeDates.findIndex(el => el.date === lastCrimeDates[0].date);
+function resetCrimesToSelectedDate() {
+    const lastDayIndex = crimeDates.findIndex(el => el.date === selectedDate);
     context.clearRect(0, 0, canvas.width, canvas.height);
     drawCrimes(crimeDates.slice(0, lastDayIndex));
     stats = [];
     generateStats(crimeDates.slice(0, lastDayIndex));
     statsNode.innerHTML = '';
     renderStats();
-    timelineRange.value = 0;
 };
 
 function playAnimation(arr, index, lastIndex) {
+    isAnimationPaused = false;
     clearTimeout(animationTimeout);
+    lastAnimationIndex = index + 1;
+    timelineRange.value = index + 1;
+    createDots(arr[index]);
+    addStat(arr[index]);
+    renderStats();
+    setBubble();
     if (index === lastIndex) {
+        isAnimationStarted = false;
         return;
     }
     animationTimeout = setTimeout(() => {
-        timelineRange.value = index + 1;
-        createDots(arr[index]);
-        addStat(arr[index]);
-        renderStats();
         playAnimation(arr, index + 1, lastIndex);
-    }, 1000);
+    }, 500);
 }
 
 function pauseAnimation() {
     clearTimeout(animationTimeout);
+    isAnimationPaused = true;
     isAnimationStarted = false;
 }
 
-function startAnimation(selectedDate = lastCrimeDates[0].date) {
+function startAnimation() {
     isAnimationStarted = true;
-    resetCrimesToDate();
+    resetCrimesToSelectedDate();
     const index = lastCrimeDates.findIndex(el => el.date === selectedDate);
-    const arr = lastCrimeDates.slice(index, lastCrimeDates.length);
-    playAnimation(arr, 0, arr.length - 1)
+    playAnimation(lastCrimeDates, isAnimationPaused ? lastAnimationIndex : index, lastCrimeDates.length - 1)
 }
 
+function setBubble() {
+    const index = timelineRange.value;
+    selectedDate = lastCrimeDates[timelineRange.value].date;
+    bubbleNode.innerHTML = selectedDate;
+    bubbleNode.style.left = `calc(6px + ${index * (timelineNode.offsetWidth / 100)}px)`;
+}
+
+// Set main variables
 crimeDates = proceedEvents(events).sort((a, b) => (new Date(a.date) - new Date(b.date)));
 lastCrimeDates = crimeDates.length > 100 ? crimeDates.slice(-100) : [...crimeDates];
 
+// Run main function
 generateTranslatesObj();
 createTimeline(lastCrimeDates);
-generateStats(crimeDates);
+setBubble();
+generateStats(crimeDates.slice(0, crimeDates.length - 100));
 renderStats();
-drawCrimes(crimeDates);
+drawCrimes(crimeDates.slice(0, crimeDates.length - 100));
 
-
+// Listeners
 playBtn.addEventListener('click', function(evt) {
     evt.stopImmediatePropagation();
     evt.preventDefault();
@@ -194,3 +214,30 @@ playBtn.addEventListener('click', function(evt) {
         startAnimation();
     }
 }, true);
+
+timelineNode.addEventListener('click', function(evt) {
+    evt.stopImmediatePropagation();
+    evt.preventDefault();
+    if (evt.target.className !== 'timeline__elem') {
+        return
+    }
+    playImg.className = '';
+    pauseImg.className = 'hide';
+    pauseAnimation();
+    isAnimationPaused = false;
+    isAnimationStarted = false;
+    selectedDate = evt.target.attributes.date.value;
+    timelineRange.value = lastCrimeDates.findIndex(el => el.date === selectedDate);
+    setBubble();
+    resetCrimesToSelectedDate();
+}, true);
+
+timelineRange.addEventListener("input", () => {
+    isAnimationPaused = false;
+    isAnimationStarted = false;
+    setBubble();
+    clearTimeout(renderTimeout);
+    renderTimeout = setTimeout(() => {
+        resetCrimesToSelectedDate();
+    }, 100)
+});
