@@ -18,50 +18,18 @@
         </div>
         <div class="wrapper">
             <div class="stats" id="stats">
-                <!-- <div class="stats__item">
-                    <div class="stats__item__count">
-                        1 234
-                    </div>
-                    <div class="stats__item__title">
-                        Killed Militarists
-                    </div>
-                </div>
-                <div class="stats__item">
-                    <div class="stats__item__count">
-                        3 280
-                    </div>
-                    <div class="stats__item__title">
-                        Killed doctors
-                    </div>
-                </div>
-                <div class="stats__item">
-                    <div class="stats__item__count">
-                        3 280
-                    </div>
-                    <div class="stats__item__title">
-                        Killed doctors
-                    </div>
-                </div>
-                <div class="stats__item">
-                    <div class="stats__item__count">
-                        3 280
-                    </div>
-                    <div class="stats__item__title">
-                        Killed Civilians
-                    </div>
-                </div> -->
             </div>
             <div class="map">
+                <canvas id="canvas" width="686" height="460"></canvas>
                 <img src="./assets/images/map.svg" alt="map">
             </div>
-            <div class="play-btn">
+            <div class="play-btn" id="play-btn">
                 <img src="./assets/images/pause.svg" alt="play">
                 <!-- <img src="./assets/images/pause.svg" alt="pause"> -->
             </div>
         </div>
         <div class="timeline" id="timeline">
-
-            <input type="range" min="0" max="100" step="1" value="0">
+            <input type="range" id="timeline-range" data-control-name="release" min="0" max="100" step="1" value="0">
         </div>
     </div>
 </body>

@@ -2,11 +2,18 @@ import './css/style.scss';
 //TODO move it to the import
 const events = require('./temp/events.json');
 const names = require('./temp/names.json');
+
 // TODO select browser default language
 const DEFAULT_LANG = 'ua';
+const LEFT_CORNER_LAT = 52.379109;
+const LEFT_CORNER_LON = 22.137507;
 
 const timelineNode = document.getElementById('timeline');
+const timelineRange = document.getElementById('timeline-range');
 const statsNode = document.getElementById('stats');
+const playBtn = document.getElementById('play-btn');
+const canvas = document.querySelector('#canvas');
+const context = canvas.getContext('2d');
 
 let crimeDates;
 let lastCrimeDates;
@@ -109,11 +116,54 @@ function createStats() {
     });
 };
 
+function createDots(date) {
+    date.crimes.forEach(crime => {
+        if (crime.lat && crime.lon) {
+            const lat = (canvas.height * (LEFT_CORNER_LAT - crime.lat)) / 7.991977;
+            const lon = (canvas.width * (crime.lon - LEFT_CORNER_LON)) / 18.082542;
+            context.beginPath();
+            context.fillStyle = '#C00000';
+            context.arc(lon, lat, 1, 0, 2 * Math.PI, true);
+            context.fill();
+        }
+    });
+}
+
+function drawCrimes(dates) {
+    dates.forEach(date => {
+        createDots(date);
+    });
+}
+
+function resetCrimesToDate() {
+    const lastDayIndex = crimeDates.findIndex(el => el.date === lastCrimeDates[0].date);
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    drawCrimes(crimeDates.slice(0, lastDayIndex));
+};
+
+function startAnimation(selectedDate = lastCrimeDates[0].date) {
+    resetCrimesToDate();
+    const index = lastCrimeDates.findIndex(el => el.date === selectedDate);
+    lastCrimeDates.slice(index, lastCrimeDates.length).forEach((date, index) => {
+        setTimeout(() => {
+            timelineRange.value = index + 1;
+            console.log(timelineRange.value)
+            createDots(date);
+        }, 500 * index);
+    });
+}
+
 crimeDates = proceedEvents(events);
 lastCrimeDates = crimeDates.length > 100 ? crimeDates.slice(-100) : [...crimeDates];
 
-// console.log(crimeDates);
-// console.log(lastCrimeDates);
 generateTranslatesObj();
 createTimeline(lastCrimeDates);
 createStats();
+drawCrimes(crimeDates);
+
+
+playBtn.addEventListener('click', function(evt) {
+    evt.stopImmediatePropagation();
+    evt.preventDefault();
+    startAnimation();
+}, true);
