@@ -1,9 +1,8 @@
 import './css/style.scss';
-//TODO move it to the import
-const events = require('./temp/events.json');
-const names = require('./temp/names.json');
 
-// TODO select browser default language
+const events = require('./data/events.json');
+const names = require('./data/names.json');
+
 const DEFAULT_LANG = 'en';
 const LEFT_CORNER_LAT = 52.379109;
 const LEFT_CORNER_LON = 22.137507;
@@ -162,7 +161,7 @@ function playAnimation(arr, index, lastIndex) {
     renderStats();
     setBubble();
     if (index === lastIndex) {
-        isAnimationStarted = false;
+        stopAnimation();
         return;
     }
     animationTimeout = setTimeout(() => {
@@ -181,6 +180,14 @@ function startAnimation() {
     resetCrimesToSelectedDate();
     const index = lastCrimeDates.findIndex(el => el.date === selectedDate);
     playAnimation(lastCrimeDates, isAnimationPaused ? lastAnimationIndex : index, lastCrimeDates.length - 1)
+}
+
+function stopAnimation() {
+    pauseAnimation();
+    playImg.className = '';
+    pauseImg.className = 'hide';
+    isAnimationPaused = false;
+    isAnimationStarted = false;
 }
 
 function setBubble() {
@@ -224,11 +231,7 @@ timelineNode.addEventListener('click', function(evt) {
     if (evt.target.className !== 'timeline__elem') {
         return
     }
-    playImg.className = '';
-    pauseImg.className = 'hide';
-    pauseAnimation();
-    isAnimationPaused = false;
-    isAnimationStarted = false;
+    stopAnimation();
     selectedDate = evt.target.attributes.date.value;
     timelineRange.value = lastCrimeDates.findIndex(el => el.date === selectedDate);
     setBubble();
@@ -236,11 +239,14 @@ timelineNode.addEventListener('click', function(evt) {
 }, true);
 
 timelineRange.addEventListener("input", () => {
-    isAnimationPaused = false;
-    isAnimationStarted = false;
+    stopAnimation();
     setBubble();
     clearTimeout(renderTimeout);
     renderTimeout = setTimeout(() => {
         resetCrimesToSelectedDate();
     }, 100)
+});
+
+window.addEventListener("resize", () => {
+    setBubble();
 });

@@ -97,6 +97,7 @@ body {
     position: relative;
     display: flex;
     align-items: flex-end;
+    border-bottom: solid 1px #292929;
     margin-bottom: 56px;
     input {
         position: absolute;
@@ -125,16 +126,10 @@ body {
 input[type=range] {
     -webkit-appearance: none;
     &::-webkit-slider-runnable-track {
-        width: 100%;
-        height: 1px;
-        cursor: pointer;
-        background: #292929;
+        height: 0px;
     }
     &::-webkit-slider-runnable-track {
-        width: 100%;
-        height: 1px;
-        cursor: pointer;
-        background: #292929;
+        height: 0px;
     }
     &::-webkit-slider-thumb {
         -webkit-appearance: none;
@@ -144,10 +139,15 @@ input[type=range] {
         background: url('../assets/images/thumb.png');
         margin-top: -10px;
         border-radius: 0 !important;
+        cursor: pointer;
+    }
+    &:hover+.bubble {
+        display: block;
     }
 }
 
 .bubble {
+    display: none;
     background: #222222;
     color: white;
     position: absolute;
