@@ -12,7 +12,7 @@ body {
 .section {
     margin: 0 auto;
     max-width: 1054px;
-    padding: 24px 12px;
+    padding: 0 12px;
     color: white;
     display: flex;
     flex-direction: column;
@@ -35,7 +35,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 26px;
+    margin-bottom: 6px;
     position: relative;
     .play-btn {
         position: absolute;
@@ -44,9 +44,6 @@ body {
         width: 40px;
         height: 40px;
         cursor: pointer;
-        .hide {
-            display: none;
-        }
     }
 }
 
@@ -100,6 +97,7 @@ body {
     position: relative;
     display: flex;
     align-items: flex-end;
+    margin-bottom: 56px;
     input {
         position: absolute;
         left: -3px;
@@ -169,4 +167,8 @@ input[type=range] {
     background: #222222;
     top: -1px;
     left: 50%;
+}
+
+.hide {
+    display: none;
 }

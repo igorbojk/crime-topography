@@ -4,7 +4,7 @@ const events = require('./temp/events.json');
 const names = require('./temp/names.json');
 
 // TODO select browser default language
-const DEFAULT_LANG = 'ua';
+const DEFAULT_LANG = 'en';
 const LEFT_CORNER_LAT = 52.379109;
 const LEFT_CORNER_LON = 22.137507;
 
@@ -17,6 +17,7 @@ const pauseImg = document.getElementById('pause');
 const bubbleNode = document.querySelector('.bubble');
 const canvas = document.querySelector('#canvas');
 const context = canvas.getContext('2d');
+const loaderNode = document.querySelector('.loader');
 
 let crimeDates;
 let lastCrimeDates;
@@ -73,7 +74,8 @@ function createTimeline(arr) {
 };
 
 function generateTranslatesObj() {
-    translates = names[DEFAULT_LANG];
+    const browserLang = window.navigator.language.split('-')[1].toLowerCase();
+    translates = names[browserLang] || names[DEFAULT_LANG];
 }
 
 function generateStats(dates) {
@@ -199,6 +201,7 @@ setBubble();
 generateStats(crimeDates.slice(0, crimeDates.length - 100));
 renderStats();
 drawCrimes(crimeDates.slice(0, crimeDates.length - 100));
+loaderNode.classList.add('hide');
 
 // Listeners
 playBtn.addEventListener('click', function(evt) {
